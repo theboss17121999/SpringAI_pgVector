@@ -2,8 +2,10 @@ package com.example.SprinAICode.controller;
 
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
 import org.springframework.ai.chat.memory.ChatMemory;
 import org.springframework.ai.chat.memory.MessageWindowChatMemory;
+import org.springframework.ai.chat.model.ChatModel;
 import org.springframework.ai.chat.model.ChatResponse;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
@@ -30,6 +32,8 @@ public class OllamaAiController {
 
     @Autowired
     private EmbeddingModel embeddingModel;
+    @Autowired
+    private ChatModel chatModel;
 
     @PostMapping("/embeddings")
     public float[] testEmbedding(@RequestParam String text) {
@@ -116,4 +120,18 @@ public class OllamaAiController {
 
         return vectorStore.similaritySearch(SearchRequest.builder().query(txt).topK(2).build());
     }
+
+    @PostMapping("/apiOllama/ask")
+    public ResponseEntity<String> getAnswerUsingrag(@RequestParam String query) {
+
+        ChatResponse response =  ChatClient.builder(chatModel)
+                .build().prompt()
+                .advisors(QuestionAnswerAdvisor.builder(vectorStore).build())
+                .user(query)
+                .call()
+                .chatResponse();
+
+        return ResponseEntity.ok(response.getResult().getOutput().getText());
+    }
+
 }
